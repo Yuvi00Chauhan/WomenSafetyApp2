@@ -1,16 +1,15 @@
 package com.shubham.womensafety
 
-import android.app.Activity
-import android.content.Intent
+import android.Manifest
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Looper
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.common.api.PendingResult
 import com.google.android.gms.common.api.Status
@@ -27,12 +26,11 @@ import com.shubham.womensafety.utils.PermissionUtils
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
     private lateinit var map: GoogleMap
-
     private var googleApiClient: GoogleApiClient? = null
-    private val REQUESTLOCATION = 199
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
+        private const val REQUESTLOCATION = 199
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,6 +81,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 }
             }
         }
+
         setUpLocationListener()
     }
 
@@ -103,12 +102,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     }
 
     private fun setUpLocationListener() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            PermissionUtils.requestAccessFineLocationPermission(this, LOCATION_PERMISSION_REQUEST_CODE)
+            return
+        }
+
         val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         val locationRequest = LocationRequest.create().apply {
             interval = 20000
             fastestInterval = 20000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
+
         fusedLocationProviderClient.requestLocationUpdates(
             locationRequest,
             object : LocationCallback() {
@@ -116,14 +123,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                     super.onLocationResult(locationResult)
                     for (location in locationResult.locations) {
                         map.clear()
-                        map.isMyLocationEnabled = true
+                        try {
+                            map.isMyLocationEnabled = true
+                        } catch (e: SecurityException) {
+                            e.printStackTrace()
+                        }
                         val currentLatLng = LatLng(location.latitude, location.longitude)
                         placeMarkerOnMap(currentLatLng)
                         map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f))
                     }
                 }
             },
-            Looper.myLooper()
+            Looper.getMainLooper()
         )
     }
 
