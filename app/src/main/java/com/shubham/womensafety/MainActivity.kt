@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.shubham.womensafety
 
 import android.Manifest
@@ -23,6 +25,7 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.shubham.womensafety.utils.PermissionUtils
 
+@Suppress("DEPRECATION")
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
     private lateinit var map: GoogleMap
